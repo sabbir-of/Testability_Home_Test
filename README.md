@@ -12,7 +12,7 @@ against assumptions about how a RealWorld clone ought to behave. Where the two d
 I wrote the finding down rather than working around it; see
 [Findings](#findings-what-i-discovered-about-the-application).
 
-**Status:** 61 tests, green on Chromium, Firefox and WebKit in ~2 minutes.
+**Status:** 60 tests across Chromium, Firefox and WebKit — green, no flakes, ~2 minutes.
 
 📊 **[Live test report](https://sabbir-of.github.io/conduit-playwright-framework/)** — published
 to GitHub Pages by CI on every run, covering all three browsers in one view.
@@ -95,8 +95,9 @@ All five required scenarios, each with a positive test and one or more negative 
 | 5 | **Update User Settings** | Changes username, bio and avatar; verifies the profile redirect, the rendered profile, persistence, untouched fields and survival of a reload · a single-field update leaves the others alone | A taken username is not applied and the stored value is untouched · logging out ends the session and locks the page · two pinned defects |
 
 **20 tests per browser** — 3 create, 4 edit, 3 delete, 4 filter, 6 settings — plus the
-shared authentication setup. Run across three browsers that is **61 tests**, green in
-roughly two minutes.
+authentication setup. A local run of all three browsers is **61 tests** (60 plus one
+shared setup); in CI it is **63**, because each browser runs in its own isolated job and
+so performs its own login. Both are green in roughly two minutes.
 
 Tests are tagged so slices can be run on their own: `@smoke`, `@positive`, `@negative`,
 `@articles`, `@user`, `@known-defect`.
