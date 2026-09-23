@@ -12,7 +12,7 @@ against assumptions about how a RealWorld clone ought to behave.
 
 **Status:** 60 tests across Chromium, Firefox and WebKit — green, no flakes, ~2 minutes.
 
-📊 **[Live test report](https://sabbir-of.github.io/conduit-playwright-framework/)** — published
+📊 **[Live test report](https://sabbir-of.github.io/Testability_Home_Test/)** — published
 to GitHub Pages by CI on every run, covering all three browsers in one view.
 
 ---
@@ -333,7 +333,7 @@ The browser jobs emit **blob reports**, which the `report` job merges into a sin
 report covering all three browsers — filterable by project in the UI — rather than three
 disconnected ones. `deploy-report` then publishes it to **GitHub Pages**:
 
-**https://sabbir-of.github.io/conduit-playwright-framework/**
+**https://sabbir-of.github.io/Testability_Home_Test/**
 
 The report is published even when tests fail, because the report of a red run is the one
 worth reading. Publishing is restricted to `main` so a pull request can never overwrite it,
