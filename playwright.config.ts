@@ -36,10 +36,12 @@ export default defineConfig({
   use: {
     baseURL: env.baseURL,
 
-    /* Traces, screenshots and video only for failures — full traceability on the
-       runs that need debugging, without bloating a green run's artifacts. */
+    /* A screenshot is captured for every test, pass or fail, so the published
+       report carries visual evidence of each scenario rather than only of
+       failures. Traces and video stay failure-only: they are debugging aids
+       and are far too large to keep for a whole green run. */
+    screenshot: 'on',
     trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
     video: 'retain-on-failure',
 
     actionTimeout: 15_000,

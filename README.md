@@ -12,7 +12,7 @@ against assumptions about how a RealWorld clone ought to behave.
 
 **Status:** 60 tests across Chromium, Firefox and WebKit — green, no flakes, ~2 minutes.
 
-📊 **[Live test report](https://sabbir-of.github.io/Testability_Home_Test/)** — published
+**[Live test report](https://sabbir-of.github.io/Testability_Home_Test/)** — published
 to GitHub Pages by CI on every run, covering all three browsers in one view.
 
 ---
@@ -300,10 +300,13 @@ npm run report            # open the HTML report
 npm run report:allure     # generate and open Allure (needs the Allure CLI)
 ```
 
-On failure — and only on failure — Playwright keeps a **trace**, a **screenshot** and a
-**video**. Keeping them only for failures means a green run stays small while a red one
-carries everything needed to diagnose it. The trace is the valuable artefact: it replays
-the run step by step with DOM snapshots, network activity and console output.
+A **screenshot** is captured for every test, pass or fail, so the published report carries
+visual evidence of each scenario rather than only of the ones that broke.
+
+**Traces** and **video** are kept on failure only. They are debugging aids and far too
+large to retain for a whole green run, whereas a failing run needs everything. The trace is
+the valuable one: it replays the run step by step with DOM snapshots, network activity and
+console output.
 
 ```bash
 npx playwright show-trace test-results/<test-name>/trace.zip
@@ -339,8 +342,8 @@ The report is published even when tests fail, because the report of a red run is
 worth reading. Publishing is restricted to `main` so a pull request can never overwrite it,
 and the Pages write permission is scoped to that one job rather than the whole workflow.
 
-Traces, screenshots and video are uploaded as artifacts on failure, and Allure results on
-every run, all retained for 14 days.
+Screenshots travel inside the published report itself. Traces and video are uploaded as
+separate artifacts on failure, and Allure results on every run, all retained for 14 days.
 
 Configure these under **Settings → Secrets and variables → Actions**:
 
