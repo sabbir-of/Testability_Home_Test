@@ -1,0 +1,23 @@
+node_modules/
+
+# Secrets — never commit real credentials. See .env.example.
+.env
+.env.local
+
+# Persisted authentication sessions
+.auth/
+
+# Test output
+test-results/
+playwright-report/
+allure-results/
+allure-report/
+blob-report/
+playwright/.cache/
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log

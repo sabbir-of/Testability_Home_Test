@@ -1,0 +1,96 @@
+name: Playwright E2E
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Nightly regression run at 02:00 UTC — catches breakage in the hosted app
+    # even when nobody has pushed.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: Browser project to run
+        type: choice
+        default: all
+        options: [all, chromium, firefox, webkit]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      # One browser failing should not hide the results of the others.
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Install Playwright browser (${{ matrix.project }})
+        run: npx playwright install --with-deps ${{ matrix.project }}
+
+      - name: Run Playwright tests
+        if: github.event.inputs.browser == null || github.event.inputs.browser == 'all' || github.event.inputs.browser == matrix.project
+        run: npx playwright test --project=${{ matrix.project }}
+        env:
+          BASE_URL: ${{ vars.BASE_URL || 'https://conduit.bondaracademy.com' }}
+          API_URL: ${{ vars.API_URL || 'https://conduit-api.bondaracademy.com/api' }}
+          CONDUIT_EMAIL: ${{ secrets.CONDUIT_EMAIL }}
+          CONDUIT_PASSWORD: ${{ secrets.CONDUIT_PASSWORD }}
+          CONDUIT_USERNAME: ${{ secrets.CONDUIT_USERNAME }}
+
+      # Uploaded on failure as well as success — the traces and screenshots are
+      # exactly what is needed to diagnose a red run.
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload traces, screenshots and video
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ matrix.project }}
+          path: test-results/
+          retention-days: 14
+
+      - name: Upload Allure results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ matrix.project }}
+          path: allure-results/
+          retention-days: 14
+
+      - name: Publish test summary
+        if: ${{ !cancelled() }}
+        uses: test-summary/action@v2
+        with:
+          paths: playwright-report/junit/results.xml
+        continue-on-error: true

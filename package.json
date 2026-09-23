@@ -1,0 +1,43 @@
+{
+  "name": "conduit-playwright-framework",
+  "version": "1.0.0",
+  "description": "End-to-end test automation framework for the Conduit application (https://conduit.bondaracademy.com) built with Playwright and TypeScript.",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:chromium": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:webkit": "playwright test --project=webkit",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:positive": "playwright test --grep @positive",
+    "test:negative": "playwright test --grep @negative",
+    "test:headed": "playwright test --project=chromium --headed",
+    "test:debug": "playwright test --project=chromium --debug",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report playwright-report/html",
+    "report:allure": "allure generate allure-results --clean -o allure-report && allure open allure-report",
+    "trace": "playwright show-trace",
+    "codegen": "playwright codegen https://conduit.bondaracademy.com",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "install:browsers": "playwright install --with-deps"
+  },
+  "keywords": [
+    "playwright",
+    "typescript",
+    "e2e",
+    "automation",
+    "conduit",
+    "realworld"
+  ],
+  "author": "Azman Sabbir",
+  "license": "MIT",
+  "devDependencies": {
+    "@faker-js/faker": "^9.3.0",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2",
+    "allure-playwright": "^3.0.9",
+    "dotenv": "^16.4.7",
+    "typescript": "^5.7.2"
+  }
+}
