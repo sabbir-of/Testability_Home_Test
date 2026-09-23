@@ -14,6 +14,9 @@ I wrote the finding down rather than working around it; see
 
 **Status:** 61 tests, green on Chromium, Firefox and WebKit in ~2 minutes.
 
+📊 **[Live test report](https://sabbir-of.github.io/conduit-playwright-framework/)** — published
+to GitHub Pages by CI on every run, covering all three browsers in one view.
+
 ---
 
 ## Contents
@@ -315,18 +318,33 @@ npx playwright show-trace test-results/<test-name>/trace.zip
 ## CI/CD
 
 `.github/workflows/playwright.yml` runs on every push and pull request to `main`, nightly
-at 02:00 UTC, and on demand via `workflow_dispatch` with a browser picker.
+at 02:00 UTC, and on demand via `workflow_dispatch` with a browser picker. It has three
+jobs: `test` (matrix), `report` (merge), `deploy-report` (publish).
 
 - A **matrix** runs Chromium, Firefox and WebKit as separate jobs with `fail-fast: false`,
   so one browser failing does not hide the others' results.
 - Type-checking runs before the tests, so a compile error fails in seconds rather than
   after a full browser run.
-- Only the browser under test is downloaded in each job.
+- Each job installs only the browser under test, plus Chromium for the shared
+  authentication setup.
 - Credentials come from repository secrets. The nightly run catches breakage in the hosted
   application even when nobody has pushed.
-- HTML reports, Allure results, traces, screenshots and video are uploaded as artifacts
-  and retained for 14 days, with a JUnit summary published to the run page.
 - `concurrency` cancels superseded runs on the same branch.
+
+### Published report
+
+The browser jobs emit **blob reports**, which the `report` job merges into a single HTML
+report covering all three browsers — filterable by project in the UI — rather than three
+disconnected ones. `deploy-report` then publishes it to **GitHub Pages**:
+
+**https://sabbir-of.github.io/conduit-playwright-framework/**
+
+The report is published even when tests fail, because the report of a red run is the one
+worth reading. Publishing is restricted to `main` so a pull request can never overwrite it,
+and the Pages write permission is scoped to that one job rather than the whole workflow.
+
+Traces, screenshots and video are uploaded as artifacts on failure, and Allure results on
+every run, all retained for 14 days.
 
 Configure these under **Settings → Secrets and variables → Actions**:
 
