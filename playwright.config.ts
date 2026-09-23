@@ -52,6 +52,11 @@ export default defineConfig({
       name: 'setup',
       testDir: './src/fixtures',
       testMatch: /auth\.setup\.ts/,
+      // Pinned to Chromium on purpose. The saved session is a single
+      // localStorage entry and carries no browser-specific state, so signing in
+      // once here serves all three browser projects. Every CI job therefore
+      // installs Chromium alongside the browser it is actually testing.
+      use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'chromium',

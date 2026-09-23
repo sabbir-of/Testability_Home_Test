@@ -49,8 +49,10 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
-      - name: Install Playwright browser (${{ matrix.project }})
-        run: npx playwright install --with-deps ${{ matrix.project }}
+      # Chromium is needed in every job, not just the Chromium one: the shared
+      # authentication setup project runs in it before the browser under test.
+      - name: Install Playwright browsers (chromium + ${{ matrix.project }})
+        run: npx playwright install --with-deps chromium ${{ matrix.project }}
 
       - name: Run Playwright tests
         if: github.event.inputs.browser == null || github.event.inputs.browser == 'all' || github.event.inputs.browser == matrix.project
