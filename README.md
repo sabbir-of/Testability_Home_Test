@@ -8,9 +8,7 @@ built with **Playwright** and **TypeScript**.
 
 Every required scenario is covered by a positive test and at least one negative test.
 Every assertion was written against behaviour I observed on the live application — not
-against assumptions about how a RealWorld clone ought to behave. Where the two disagreed,
-I wrote the finding down rather than working around it; see
-[Findings](#findings-what-i-discovered-about-the-application).
+against assumptions about how a RealWorld clone ought to behave.
 
 **Status:** 60 tests across Chromium, Firefox and WebKit — green, no flakes, ~2 minutes.
 
@@ -29,8 +27,6 @@ to GitHub Pages by CI on every run, covering all three browsers in one view.
 - [Running the tests](#running-the-tests)
 - [Reports and traceability](#reports-and-traceability)
 - [CI/CD](#cicd)
-- [Findings](#findings-what-i-discovered-about-the-application)
-- [Use of AI tooling](#use-of-ai-tooling)
 - [Tech stack](#tech-stack)
 
 ---
@@ -68,10 +64,9 @@ building the page objects I wrote throwaway probe scripts that:
 - exercised the REST API directly for every happy and unhappy path, capturing real status
   codes and error bodies.
 
-That verification pass is what produced the four findings in this README. It also caught
-several plausible-but-wrong assumptions before they became tests that passed vacuously or
-failed for the wrong reason. It cost perhaps an hour, and it is the difference between a
-suite that looks thorough and one that is.
+That verification pass caught several plausible-but-wrong assumptions before they became
+tests that passed vacuously or failed for the wrong reason. It cost perhaps an hour, and it
+is the difference between a suite that looks thorough and one that is.
 
 The second decision: **assert on the server, not only the screen.** Every UI test that
 changes data follows up with an API check. A test must not be able to pass because a page
@@ -92,7 +87,7 @@ All five required scenarios, each with a positive test and one or more negative 
 | 2 | **Edit Article** *(article seeded via API)* | Updates title, description and body; verifies the pre-filled form, the new slug, the rendered page, persistence, untouched tags and survival of a reload | A cleared title never destroys the stored title · the API refuses edits to another user's article (403) and anonymous edits (401) · owner-only controls are hidden on someone else's article |
 | 3 | **Delete Article** *(article seeded via API)* | Deletes from the article page; verifies the redirect home, removal from the backend and the feed, and that the URL no longer resolves | Deleting an already-deleted or unknown slug returns 404 · an unauthenticated caller cannot delete, and the article survives the attempt |
 | 4 | **Filter Articles by Tag** | Selects a tag in the sidebar; verifies the feed switches to a tag view, holds exactly the articles the API reports, that every card displays the tag, and that clearing the filter restores the full feed · a filter matches an article by its own tag and no other | An unused tag returns an empty feed rather than everything · filtering never returns an article lacking the tag |
-| 5 | **Update User Settings** | Changes username, bio and avatar; verifies the profile redirect, the rendered profile, persistence, untouched fields and survival of a reload · a single-field update leaves the others alone | A taken username is not applied and the stored value is untouched · logging out ends the session and locks the page · two pinned defects |
+| 5 | **Update User Settings** | Changes username, bio and avatar; verifies the profile redirect, the rendered profile, persistence, untouched fields and survival of a reload · a single-field update leaves the others alone | A taken username is not applied and the stored value is untouched · logging out ends the session and locks the page · two `@known-defect` sentinels, marked `test.fail()`, covering the settings form not pre-populating and the header losing its navigation after a save |
 
 **20 tests per browser** — 3 create, 4 edit, 3 delete, 4 filter, 6 settings — plus the
 authentication setup. A local run of all three browsers is **61 tests** (60 plus one
@@ -354,80 +349,6 @@ Configure these under **Settings → Secrets and variables → Actions**:
 | `CONDUIT_EMAIL` | test account email |
 | `CONDUIT_PASSWORD` | test account password |
 | `CONDUIT_USERNAME` | test account username |
-
----
-
-## Findings: what I discovered about the application
-
-Building the suite surfaced genuine defects. Rather than writing tests that quietly work
-around them, I **pinned each user-visible one with a test marked `test.fail()`**: the suite
-asserts the bug is still present, and the moment it is fixed that test passes unexpectedly
-and the run goes red, prompting the note to be removed. A pinned defect is a tracked
-defect, and it cannot be silently forgotten.
-
-**1. The settings form never pre-populates.**
-Opening `/settings` shows every field blank — username, email, bio and avatar — however the
-session was established (login form or restored token), and no amount of waiting fills them
-in. The user cannot see their current settings, and editing one field looks as though it
-will erase the rest. Pinned by *"known defect: the settings form does not pre-populate
-current values"*.
-
-**2. The header loses its navigation after a settings save.**
-After a successful save the app redirects to the profile with its header collapsed to the
-"conduit" brand alone — no Home, New Article, Settings or username, for signed-in and
-signed-out states alike. It does not recover on its own; only a full page reload restores
-it. The session is fine and the JWT is still in storage. I reproduced it with a bio-only
-save as well as a rename, so any successful update triggers it. The user is left stranded
-on the profile page with no way to navigate. Pinned by *"known defect: the header loses its
-navigation after a settings save"*.
-
-Two further observations, documented in the tests rather than pinned, because they are
-backend contract quirks rather than user-visible breakage:
-
-**3. An empty title is rejected on create but silently ignored on update.**
-`POST /articles` with a blank title returns `422 {"title":["can't be blank"]}` and the
-editor shows the message. `PUT /articles/:slug` with a blank title returns `200` and keeps
-the previous title. The inconsistency means the UI reports a validation error in one flow
-and none in the other. No data is lost, so the edit test asserts the guarantee that
-actually holds: a blank submission must never blank out a live article.
-
-**4. A duplicate username fails with a 500, not a 4xx.**
-`PUT /user` with a taken username returns `500` carrying a raw Prisma unique-constraint
-error, and the UI surfaces nothing at all — it simply stays on the settings page. A
-conflict is a client error and should be a `409`/`422` with a message the application can
-display. Leaking an ORM error to the client is also an information-disclosure smell. The
-test asserts the observable guarantee — the update is not applied and the stored username
-is untouched — rather than the particular status code.
-
-One characteristic worth knowing, which is deployment behaviour rather than a bug:
-**anonymous callers see only the ten seeded demo articles**, while authenticated callers
-see every article. API assertions therefore run authenticated, matching what the signed-in
-browser session sees. Relatedly, `GET /tags` returns a fixed, curated "popular tags" list —
-a tag invented by a new article is filterable but never joins the sidebar — so the
-tag-filter UI journey uses a popular tag, and tag-discrimination logic is covered
-separately against unique tags where an exact assertion is possible.
-
----
-
-## Use of AI tooling
-
-The brief asked for AI tooling to be used, but not blindly. I used it for scaffolding and
-for drafting page objects and specs, and then treated everything it produced as a
-hypothesis to be checked against the running application.
-
-That checking is the whole point, and it earned its keep. Among the assumptions it
-overturned:
-
-- that clearing a title in the editor would surface a validation error on update, as it
-  does on create — it does not;
-- that the settings form would arrive pre-filled, as every Conduit screenshot shows — on
-  this deployment it does not;
-- that a brand-new tag would appear in the popular-tags sidebar — it does not;
-- that `?tag=` returns the same results with and without authentication — it does not.
-
-Each of those would have produced a confidently written test that failed for the wrong
-reason or, worse, passed while asserting nothing. The four findings above came out of the
-same process. The framework is the product of the verification, not of the generation.
 
 ---
 
